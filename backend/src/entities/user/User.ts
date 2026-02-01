@@ -5,6 +5,7 @@ export class User {
     public readonly id: UserId,
     public username: string,
     public email: string,
+    public  password: string,
     public emailVerified: boolean,
     public image?: string,
     public isActive: boolean = true,

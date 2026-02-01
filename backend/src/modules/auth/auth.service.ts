@@ -2,6 +2,12 @@ import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/mongo/userRepository";
 import { User } from "../../entities/user/User";
 import type { UserResponse } from "./auth.types";
+import { generateJwtToken } from "../../lib/jwt";
+import { UserTokenModel } from "../../database/mongo/userToken.schema";
+import { userTokenRepository } from "../../database/mongo/tokenRepository";
+
+import { UserId } from "../../entities/user/UserId";
+import { resolve } from "path";
 
 export function userToResponse(user: User): UserResponse {
   return {
@@ -14,6 +20,12 @@ export function userToResponse(user: User): UserResponse {
     ...(user.createdAt !== undefined && { createdAt: user.createdAt }),
     ...(user.updatedAt !== undefined && { updatedAt: user.updatedAt }),
   };
+}
+
+interface loginReturn {
+  user: User;
+  token: string;
+  message: string;
 }
 
 export const registerService = async (
@@ -45,4 +57,49 @@ export const registerService = async (
   return userToResponse(user);
 };
 
-export default registerService;
+export const loginService = async (
+  email: string,
+  password: string,
+  deviceId: string,
+): Promise<loginReturn | null> => {
+  if (!email || !password || !deviceId) throw new Error("Credentials not received.");
+
+  const user = await userRepository.findUserByEmailWithPassword(email);
+
+  if (!user) {
+    throw new Error("User not found!");
+  }
+
+  // check password
+  const isMatch: boolean = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    throw new Error("User credentials are invalid!");
+  }
+
+  // if user exist, issue the jwt token
+  const token = generateJwtToken({
+    userId: user.id.toString(),
+    email: user.email,
+  });
+
+  // delete previous token details from database
+  await userTokenRepository.deleteTokenSession(
+    user.id,
+    deviceId,
+  );
+
+  // stores token into the session
+  await userTokenRepository.createTokenSession(
+    user.id,
+    deviceId,
+    token,
+    new Date(Date.now() + 24 * 3600 * 1000), // expire at one day
+  );
+
+  return {
+    user,
+    token,
+    message: "login successfully!",
+  };
+};

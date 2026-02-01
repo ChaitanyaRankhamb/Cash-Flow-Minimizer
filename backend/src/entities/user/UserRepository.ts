@@ -22,4 +22,6 @@ export interface UserRepository {
   findUserByUsername(username: string): Promise<User | null>;
 
   findUserByEmail(email: string): Promise<User | null>;
+
+  findUserByEmailWithPassword(email: string): Promise<User | null>;
 }

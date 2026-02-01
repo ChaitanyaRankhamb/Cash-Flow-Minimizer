@@ -13,6 +13,7 @@ function docToUser(doc: UserDocument): User {
     new UserId(doc._id.toString()),
     doc.username,
     doc.email,
+    doc.password,
     doc.emailVerified,
     doc.image,
     doc.isActive,
@@ -40,6 +41,7 @@ export class MongoUserRepository implements IUserRepository {
       {
         username: user.username,
         email: user.email,
+        password: user.password,
         emailVerified: user.emailVerified,
         image: user.image,
         isActive: user.isActive,
@@ -66,6 +68,13 @@ export class MongoUserRepository implements IUserRepository {
 
   async findUserByEmail(email: string): Promise<User | null> {
     const doc = await UserModel.findOne({ email: email.toLowerCase() });
+    return doc ? docToUser(doc) : null;
+  }
+
+  async findUserByEmailWithPassword(email: string): Promise<User | null> {
+    const doc = await UserModel.findOne({ email: email.toLowerCase() }).select(
+      "+password"
+    );
     return doc ? docToUser(doc) : null;
   }
 }

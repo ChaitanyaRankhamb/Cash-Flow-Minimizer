@@ -1,12 +1,24 @@
 import { Request, Response } from "express";
-import registerService from "./auth.service";
+import { registerService, loginService, userToResponse } from "./auth.service";
+import { User } from "../../entities/user/User";
 
-const registerController = async (
+interface loginReturn {
+  user: User;
+  token: string;
+  message: string;
+}
+
+export const registerController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
     const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      res.status(400).json({ message: "Credentials not found!" });
+      return;
+    }
 
     const user = await registerService(username, email, password);
 
@@ -20,4 +32,39 @@ const registerController = async (
   }
 };
 
-export default registerController;
+export const loginController = async (
+  req: Request,
+  res: Response
+): Promise<loginReturn | void> => {
+  // get device id from headers
+  const deviceId = Array.isArray(req.headers["x-device-id"])
+    ? req.headers["x-device-id"][0]
+    : req.headers["x-device-id"];
+
+  const { email, password } = req.body;
+
+  if (!email || !password || !deviceId) {
+    res.status(400).json({ message: "Credentials not found!" });
+    return;
+  }
+
+  try {
+    const result = await loginService(email, password, deviceId);
+
+    if (!result) {
+      res.status(401).json({ message: "Invalid credentials" });
+      return;
+    }
+
+    res.status(200).json({
+      message: result.message,
+      user: userToResponse(result.user),
+      token: result.token,
+    });
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+    return;
+  }
+};
