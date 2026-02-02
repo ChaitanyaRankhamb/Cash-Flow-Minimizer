@@ -103,6 +103,15 @@ export class MongoGroupRepository implements IGroupRepository {
     return doc ? docToGroupMember(doc) : null;
   }
 
+  async findAllGroupMembers(
+    groupId: GroupId,
+  ): Promise<GroupMember[] | null> {
+    const doc = await GroupMemberModel.find({
+      groupId: new mongoose.Types.ObjectId(groupId.toString()),
+    });
+    return doc.length > 0 ? doc.map(docToGroupMember) : [];
+  }
+
   async updateGroupMemberRole(
     data: UpdateGroupMemberRoleData
   ): Promise<GroupMember> {
