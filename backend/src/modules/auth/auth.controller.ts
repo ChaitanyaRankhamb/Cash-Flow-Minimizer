@@ -6,11 +6,12 @@ interface loginReturn {
   user: User;
   token: string;
   message: string;
+  cookie: string;
 }
 
 export const registerController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { username, email, password } = req.body;
@@ -34,7 +35,7 @@ export const registerController = async (
 
 export const loginController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<loginReturn | void> => {
   // get device id from headers
   const deviceId = Array.isArray(req.headers["x-device-id"])
@@ -49,7 +50,7 @@ export const loginController = async (
   }
 
   try {
-    const result = await loginService(email, password, deviceId);
+    const result = await loginService(email, password, deviceId, req, res);
 
     if (!result) {
       res.status(401).json({ message: "Invalid credentials" });
@@ -60,6 +61,7 @@ export const loginController = async (
       message: result.message,
       user: userToResponse(result.user),
       token: result.token,
+      cookie: req.cookies.token,
     });
   } catch (error: any) {
     res

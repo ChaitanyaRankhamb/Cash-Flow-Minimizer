@@ -1,13 +1,13 @@
 import bcrypt from "bcryptjs";
+import { Request, Response } from "express";
 import { userRepository } from "../../database/mongo/userRepository";
 import { User } from "../../entities/user/User";
 import type { UserResponse } from "./auth.types";
-import { generateJwtToken } from "../../lib/jwt";
+import { generateJwtToken, verifyToken } from "../../lib/jwt";
 import { UserTokenModel } from "../../database/mongo/userToken.schema";
 import { userTokenRepository } from "../../database/mongo/tokenRepository";
 
 import { UserId } from "../../entities/user/UserId";
-import { resolve } from "path";
 
 export function userToResponse(user: User): UserResponse {
   return {
@@ -31,7 +31,7 @@ interface loginReturn {
 export const registerService = async (
   username: string,
   email: string,
-  password: string
+  password: string,
 ): Promise<UserResponse> => {
   const existingUsername = await userRepository.findUserByUsername(username);
   if (existingUsername) {
@@ -61,8 +61,11 @@ export const loginService = async (
   email: string,
   password: string,
   deviceId: string,
+  req: Request,
+  res: Response,
 ): Promise<loginReturn | null> => {
-  if (!email || !password || !deviceId) throw new Error("Credentials not received.");
+  if (!email || !password || !deviceId)
+    throw new Error("Credentials not received.");
 
   const user = await userRepository.findUserByEmailWithPassword(email);
 
@@ -84,17 +87,33 @@ export const loginService = async (
   });
 
   // delete previous token details from database
-  await userTokenRepository.deleteTokenSession(
-    user.id,
-    deviceId,
-  );
+  await userTokenRepository.deleteTokenSession(user.id, deviceId);
+
+  // Clear any existing token cookie
+  res.clearCookie("token");
+
+  // Object.keys(req.cookies).forEach((cookieName) => {
+  //   if (cookieName === "token") {
+  //     res.clearCookie(cookieName);
+  //   }
+  // });
+
+  // Set new token cookie
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+  const decode = verifyToken(token);
+  console.log(decode);
 
   // stores token into the session
   await userTokenRepository.createTokenSession(
     user.id,
     deviceId,
     token,
-    new Date(Date.now() + 24 * 3600 * 1000), // expire at one day
+    new Date(Date.now() + 24 * 60 * 60 * 1000), // expire at one day
   );
 
   return {
