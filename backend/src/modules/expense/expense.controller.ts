@@ -1,12 +1,17 @@
-import { Expense } from "../../../entities/expense/Expense";
+import { Expense } from "../../entities/expense/Expense";
 import { Request, Response } from "express";
-import { CreateExpenseData } from "../../../entities/expense/ExpenseRepository";
-import { GroupId } from "../../../entities/group/GroupId";
-import { UserId } from "../../../entities/user/UserId";
-import { createExpenseService } from "../../../services/expense/createExpenseService";
-import jwt from "jsonwebtoken";
-import { verifyToken } from "../../../lib/jwt";
-import { ExpenseId } from "../../../entities/expense/ExpenseId";
+import { CreateExpenseData } from "../../entities/expense/ExpenseRepository";
+import { GroupId } from "../../entities/group/GroupId";
+import { UserId } from "../../entities/user/UserId";
+import { ExpenseId } from "../../entities/expense/ExpenseId";
+import { AuthRequest } from "../../middleware/authMiddleware";
+import {
+  createExpenseService,
+  deleteExpenseService,
+  getExpenseByIdService,
+  getExpensesByGroupService,
+  updateExpenseService,
+} from "./expense.service";
 
 declare global {
   namespace Express {
@@ -17,17 +22,22 @@ declare global {
 }
 
 export const createExpenseController = async (
-  req: Request<{ groupId: string }, {}, Omit<CreateExpenseData, "groupId" | "paidBy">>,
-  res: Response
+  req: AuthRequest & {
+    params: { groupId: string };
+    body: Omit<CreateExpenseData, "groupId" | "paidBy">;
+  },
+  res: Response,
 ): Promise<void> => {
   try {
     const groupId = new GroupId(req.params.groupId);
 
-    if (!req.user?.userId) {
-      res.status(401).json({ message: "Unauthorized: User ID not found in request." });
+    if (!req?.userId) {
+      res
+        .status(401)
+        .json({ message: "Unauthorized: User ID not found in request." });
       return;
     }
-    const currentUserId = new UserId(req.user.userId); // Now guaranteed to be a string
+    const currentUserId = new UserId(req?.userId); // Now guaranteed to be a string
 
     const body = req.body;
 
@@ -43,7 +53,7 @@ export const createExpenseController = async (
       title: body.title || "",
       totalAmount: body.totalAmount,
       splitType: body.splitType,
-      splits: body.splits.map(s => ({
+      splits: body.splits.map((s: any) => ({
         userId: new UserId(s.userId.toString()),
         value: s.value,
       })),
@@ -55,25 +65,29 @@ export const createExpenseController = async (
     const expense: Expense | null = await createExpenseService(expenseData);
 
     if (!expense) {
-      res.status(400).json({ message: "Expense Creation Failed! Please try again!" });
+      res
+        .status(400)
+        .json({ message: "Expense Creation Failed! Please try again!" });
       return;
     }
 
     res.status(201).json({ message: "Expense Created Successfully!", expense });
   } catch (error: any) {
     console.error("Error creating expense:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 
 export const getExpensesByGroupController = async (
   req: Request<{ groupId: string }>,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
-    const groupId = new GroupId(req.params.groupId);
+    const groupIdStr = req.params.groupId;
 
-    const expenses: Expense[] = await getExpenseByGroupService(groupId);
+    const expenses: Expense[] = await getExpensesByGroupService(groupIdStr);
 
     res.status(200).json({
       message: "Expenses retrieved successfully",
@@ -89,17 +103,13 @@ export const getExpensesByGroupController = async (
 };
 
 export const getExpenseByIdController = async (
-  req: Request<{ groupId: string; expenseId: string }>,
-  res: Response
+  req: Request<{ expenseId: string }>,
+  res: Response,
 ): Promise<void> => {
   try {
-    const groupId = new GroupId(req.params.groupId);
-    const expenseId = new ExpenseId(req.params.expenseId);
+    const eid = new ExpenseId(req.params.expenseId);
 
-    const expense: Expense | null = await getExpenseByIdService(
-      groupId,
-      expenseId
-    );
+    const expense: Expense | null = await getExpenseByIdService(eid.toString());
 
     if (!expense) {
       res.status(404).json({
@@ -122,28 +132,27 @@ export const getExpenseByIdController = async (
 };
 
 export const updateExpenseController = async (
-  req: Request<{ groupId: string; expenseId: string }>,
-  res: Response
+  req: AuthRequest & { params: { groupId: string; expenseId: string } },
+  res: Response,
 ): Promise<void> => {
   try {
     const groupId = new GroupId(req.params.groupId);
     const expenseId = new ExpenseId(req.params.expenseId);
 
-    if (!req.user?.userId) {
+    if (!req.userId) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
 
-    const currentUserId = new UserId(req.user.userId);
+    const currentUserId = new UserId(req.userId);
     const body = req.body;
 
-    const updatedExpense: Expense | null =
-      await updateExpenseService({
-        groupId,
-        expenseId,
-        paidBy: currentUserId,
-        data: body,
-      });
+    const updatedExpense: Expense | null = await updateExpenseService({
+      groupId,
+      expenseId,
+      paidBy: currentUserId,
+      ...body,
+    });
 
     if (!updatedExpense) {
       res.status(404).json({
@@ -165,24 +174,21 @@ export const updateExpenseController = async (
 };
 
 export const deleteExpenseController = async (
-  req: Request<{ groupId: string; expenseId: string }>,
-  res: Response
+  req: AuthRequest & { params: { groupId: string; expenseId: string } },
+  res: Response,
 ): Promise<void> => {
   try {
     const groupId = new GroupId(req.params.groupId);
     const expenseId = new ExpenseId(req.params.expenseId);
 
-    if (!req.user?.userId) {
+    if (!req.userId) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
 
-    const currentUserId = new UserId(req.user.userId);
-
     const deleted = await deleteExpenseService(
-      groupId,
-      expenseId,
-      currentUserId
+      req.params.groupId,
+      req.params.expenseId,
     );
 
     if (!deleted) {
@@ -202,4 +208,3 @@ export const deleteExpenseController = async (
     });
   }
 };
-

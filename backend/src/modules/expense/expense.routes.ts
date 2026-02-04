@@ -5,13 +5,13 @@ import {
   getExpensesByGroupController,
   updateExpenseController,
   deleteExpenseController,
-} from "./controller/expense.controller";
-import {
-  getExpenseSplitsController,
-  updateExpenseSplitsController,
-} from "./controller/expenseSplit.controller";
+} from "./expense.controller";
+import { authMiddleware } from "../../middleware/authMiddleware";
 
 const router = express.Router();
+
+// Apply authMiddleware to all expense routes
+router.use(authMiddleware);
 
 //Expense Routers
 
@@ -29,16 +29,5 @@ router.patch("/:groupId/expenses/:expenseId", updateExpenseController);
 
 // delete expense
 router.delete("/:groupId/expenses/:expenseId", deleteExpenseController);
-
-// ExpenseSplits Routers
-
-// get expense splits
-router.get("/:groupId/expenses/:expenseId/splits", getExpenseSplitsController);
-
-// update expense splits
-router.patch(
-  "/:groupId/expenses/:expenseId/splits",
-  updateExpenseSplitsController,
-);
 
 export default router;
