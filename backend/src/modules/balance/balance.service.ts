@@ -6,6 +6,8 @@ import { UserId } from "../../entities/user/UserId";
 import { Expense } from "../../entities/expense/Expense";
 import { ExpenseSplit } from "../../entities/expense/ExpenseSplit";
 import { ExpenseId } from "../../entities/expense/ExpenseId";
+import { Settlement } from "../../entities/settlement/settlement";
+import { settlementRepository } from "../../database/mongo/settlement/settlementRepository";
 
 export interface BalanceData {
   userId: UserId;
@@ -48,12 +50,15 @@ export const groupBalanceService = async ({
   const expenseIds: ExpenseId[] = expenses.map((e) => e._id);
   console.log("Fetching splits for expense IDs:", expenseIds.length);
 
-  const splits =
-    await expenseSplitRepository.getExpenseSplitsByExpenseIds(expenseIds);
+  const splits = await expenseSplitRepository.getExpenseSplitsByExpenseIds(
+    expenseIds
+  );
   console.log("Splits found:", splits.length);
 
+  const settlements = await settlementRepository.findSettlementsByGroup(groupId);
+
   // Compute balances (PURE)
-  const balanceMap = computeNetBalances(expenses, splits);
+  const balanceMap = computeNetBalances(expenses, splits, settlements);
 
   // Convert to DTO
   const balances: BalanceData[] = [];
@@ -77,6 +82,7 @@ export const groupBalanceService = async ({
 export const computeNetBalances = (
   expenses: Expense[],
   splits: ExpenseSplit[],
+  settlements: Settlement[]
 ): Map<string, number> => {
   const balanceMap: Map<string, number> = new Map();
 
@@ -92,6 +98,19 @@ export const computeNetBalances = (
     const userId = split.userId.toString();
     const prev = balanceMap.get(userId) ?? 0;
     balanceMap.set(userId, +(prev - split.amount).toFixed(2));
+  }
+
+  for (const settlement of settlements) {
+    const who = settlement.who.toString(); //debtor
+    const whom = settlement.whom.toString(); // creditor
+
+    // debtor amount changing
+    const prevDebtorAmount = balanceMap.get(who) ?? 0;
+    balanceMap.set(who, +(prevDebtorAmount + settlement.amount).toFixed(2));
+
+    // creditor amount changing
+    const prevCreditorAmount = balanceMap.get(whom) ?? 0;
+    balanceMap.set(whom, +(prevCreditorAmount - settlement.amount).toFixed(2));
   }
 
   return balanceMap;
