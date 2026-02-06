@@ -73,4 +73,13 @@ export class mongoSettledRepository implements ISettledRepository {
   async deleteSettlement(settledId: SettledId): Promise<void> {
     await SettledModel.findByIdAndDelete(settledId.toString());
   }
+
+  async deleteSettlementByGroup(groupId: GroupId): Promise<void> {
+    await SettledModel.deleteMany({
+      groupId: groupId.toString(),
+      isSettled: false,
+    });
+  }
 }
+
+export const settledRepository = new mongoSettledRepository();
