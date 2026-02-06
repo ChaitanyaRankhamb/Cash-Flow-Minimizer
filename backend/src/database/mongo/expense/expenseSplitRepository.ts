@@ -17,13 +17,13 @@ function docToExpenseSplit(doc: ExpenseSplitDocument): ExpenseSplit {
     doc.amount,
     typeof doc.percentage === "number" ? doc.percentage : undefined,
     doc.isSettled,
-    doc.createdAt,
+    doc.createdAt
   );
 }
 
 export class MongoExpenseSplitRepository implements IExpenseSplitRepository {
   async createExpenseSplit(
-    data: CreateExpenseSplitData,
+    data: CreateExpenseSplitData
   ): Promise<ExpenseSplit> {
     // Only include percentage if it's defined
     const toCreate: any = {
@@ -41,17 +41,26 @@ export class MongoExpenseSplitRepository implements IExpenseSplitRepository {
   }
 
   async getExpenseSplitById(
-    expenseSplitId: ExpenseSplitId,
+    expenseSplitId: ExpenseSplitId
   ): Promise<ExpenseSplit | null> {
     const doc = await ExpenseSplitModel.findById(expenseSplitId.toString());
     return doc ? docToExpenseSplit(doc) : null;
   }
 
   async getExpenseSplitsByExpenseId(
-    expenseId: ExpenseId,
+    expenseId: ExpenseId
   ): Promise<ExpenseSplit[]> {
     const docs = await ExpenseSplitModel.find({
       expenseId: expenseId.toString(),
+    });
+    return docs.map(docToExpenseSplit);
+  }
+
+  async getExpenseSplitsByExpenseIds(
+    expenseIds: ExpenseId[]
+  ): Promise<ExpenseSplit[]> {
+    const docs = await ExpenseSplitModel.find({
+      expenseId: { $in: expenseIds.map((id) => id.toString()) },
     });
     return docs.map(docToExpenseSplit);
   }
@@ -64,7 +73,7 @@ export class MongoExpenseSplitRepository implements IExpenseSplitRepository {
   }
 
   async markExpenseSplitAsSettled(
-    expenseSplitId: ExpenseSplitId,
+    expenseSplitId: ExpenseSplitId
   ): Promise<ExpenseSplit> {
     const doc = await ExpenseSplitModel.findByIdAndUpdate(
       expenseSplitId.toString(),
@@ -72,14 +81,17 @@ export class MongoExpenseSplitRepository implements IExpenseSplitRepository {
         isSettled: true,
         updatedAt: new Date(),
       },
-      { new: true },
+      { new: true }
     );
     if (!doc) throw new Error("ExpenseSplit not found");
     return docToExpenseSplit(doc);
   }
 
-  async deleteExpenseSplit(expenseSplitId: ExpenseSplitId): Promise<void> {
-    await ExpenseSplitModel.findByIdAndDelete(expenseSplitId.toString());
+  async deleteExpenseSplits(expenseId: ExpenseId): Promise<boolean> {
+    const result = await ExpenseSplitModel.deleteMany({
+      expenseId: expenseId.toString(),
+    });
+    return result.deletedCount > 0;
   }
 }
 

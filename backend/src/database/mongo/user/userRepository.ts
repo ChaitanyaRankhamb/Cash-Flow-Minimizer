@@ -1,10 +1,10 @@
-import { User } from "../../entities/user/User";
-import { UserId } from "../../entities/user/UserId";
+import { User } from "../../../entities/user/User";
+import { UserId } from "../../../entities/user/UserId";
 
 import type {
   UserRepository as IUserRepository,
   CreateUserData,
-} from "../../entities/user/UserRepository";
+} from "../../../entities/user/UserRepository";
 
 import { UserModel, type UserDocument } from "./userSchema";
 

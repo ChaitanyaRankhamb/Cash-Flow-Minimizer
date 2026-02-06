@@ -5,7 +5,7 @@ import z from "zod";
 export interface UserTokenDocument extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
-  deviceId: string;
+  deviceId?: string;
   token: string;
   expireAt: Date;
   createdAt: Date;
@@ -30,8 +30,8 @@ const UserTokenSchema = new Schema<UserTokenDocument>(
       index: true,
     },
     deviceId: {
-      type: String,
       required: true,
+      type: String,
       unique: true,
     },
     token: {

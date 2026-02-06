@@ -38,6 +38,14 @@ function docToGroupMember(doc: GroupMemberDocument): GroupMember {
 }
 
 export class MongoGroupRepository implements IGroupRepository {
+  async exists(groupId: GroupId): Promise<boolean> {
+    const isGroup = await GroupModel.exists({
+      _id: groupId.toString(),
+    });
+
+    return Boolean(isGroup);
+  }
+
   async createGroup(data: CreateGroupData): Promise<Group> {
     const doc = await GroupModel.create({
       name: data.name,
