@@ -4,7 +4,7 @@ import { GroupId } from "../group/GroupId";
 import { UserId } from "../user/UserId";
 
 export interface SettledData {
-  groupId: GroupId,
+  groupId: GroupId;
   who: UserId;
   whom: UserId;
   amount: number;
@@ -31,4 +31,7 @@ export interface SettledRepository {
 
   // Delete settlement (rare: recalculation / rollback)
   deleteSettlement(settledId: SettledId): Promise<void>;
+
+  // delete settlement 
+  deleteSettlementByGroup(groupId: GroupId): Promise<void>;
 }

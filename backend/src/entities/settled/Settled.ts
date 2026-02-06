@@ -11,6 +11,6 @@ export class Settled {
     public amount: number,
     public isSettled: boolean = false,
     public readonly creditedAt: Date,
-    public readonly updatedAt: Date
+    public updatedAt: Date
   ) {}
 }
