@@ -1,12 +1,10 @@
 import express from "express";
-import {
-  createExpenseController,
-  getExpenseByIdController,
-  getExpensesByGroupController,
-  updateExpenseController,
-  deleteExpenseController,
-} from "./expense.controller";
 import { authMiddleware } from "../../middleware/authMiddleware";
+import { createExpenseController } from "./controllers/createExpenseController";
+import { getExpensesByGroupController } from "./controllers/getExpensesByGroupController";
+import { getExpenseByIdController } from "./controllers/getExpenseByIdController";
+import { updateExpenseController } from "./controllers/updateExpenseController";
+import { deleteExpenseController } from "./controllers/deleteExpenseController";
 
 const router = express.Router();
 
