@@ -1,18 +1,14 @@
 import express from "express";
-import {
-  createGroupController,
-  getGroupController,
-  updateGroupController,
-  deleteGroupController,
-} from "./controller/group.controller";
-import {
-  addGroupMemberController,
-  getGroupMemberController,
-  updateGroupMemberRoleController,
-  removeGroupMemberController,
-  getAllGroupMembersController,
-} from "./controller/groupMember.controller";
 import { authMiddleware } from "../../middleware/authMiddleware";
+import { addGroupMemberController } from "./controller/GroupMemberControllers/addGroupMemberController";
+import { getGroupMemberController } from "./controller/GroupMemberControllers/getGroupMemberController";
+import { getAllGroupMembersController } from "./controller/GroupMemberControllers/getAllGroupMembersController";
+import { updateGroupMemberRoleController } from "./controller/GroupMemberControllers/updateGroupMemberRoleController";
+import { removeGroupMemberController } from "./controller/GroupMemberControllers/removeGroupMemberController";
+import { createGroupController } from "./controller/GroupControllers/createGroupController";
+import { getGroupController } from "./controller/GroupControllers/getGroupController";
+import { updateGroupController } from "./controller/GroupControllers/updateGroupController";
+import { deleteGroupController } from "./controller/GroupControllers/deleteGroupControllet";
 
 const router = express.Router();
 

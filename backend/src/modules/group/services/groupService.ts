@@ -2,6 +2,7 @@ import { groupRepository } from "../../../database/mongo/group/groupRepository";
 import { GroupId } from "../../../entities/group/GroupId";
 import { UserId } from "../../../entities/user/UserId";
 import { Group } from "../../../entities/group/Group";
+import { GroupRole } from "../../../entities/group/GroupMember";
 
 export const createGroupService = async (
   name: string,
@@ -10,11 +11,21 @@ export const createGroupService = async (
 ): Promise<Group> => {
   const createdBy = new UserId(userId);
 
-  return groupRepository.createGroup({
+  // 1. Create Group
+  const group = await groupRepository.createGroup({
     name,
     ...(description !== undefined && { description }),
     createdBy,
   });
+
+  // 2. Create GroupMember for creator
+  await groupRepository.addGroupMember({
+    groupId: group.id,
+    userId: createdBy,
+    role: GroupRole.ADMIN as const, // Alternatively, use GroupRole.ADMIN if available/imported
+  });
+
+  return group;
 };
 
 export const getGroupService = async (
