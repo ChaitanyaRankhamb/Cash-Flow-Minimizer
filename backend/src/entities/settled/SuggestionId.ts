@@ -1,4 +1,4 @@
-export class SettledId {
+export class SuggestionId {
   constructor(private readonly value: string) {}
 
   toString(): string {

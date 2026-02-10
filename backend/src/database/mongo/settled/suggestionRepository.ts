@@ -8,7 +8,6 @@ import type {
 import { UserId } from "../../../entities/user/UserId";
 import { SuggestionDocument, SuggestionModel } from "./suggestionSchema";
 
-
 function docToSuggestion(doc: SuggestionDocument): Suggestion {
   return new Suggestion(
     new SuggestionId(doc._id.toString()),
@@ -23,18 +22,6 @@ function docToSuggestion(doc: SuggestionDocument): Suggestion {
 }
 
 export class mongoSuggestionRepository implements ISuggestionRepository {
-  getSettlementById(suggestionId: SuggestionId): Promise<Suggestion | null> {
-    throw new Error("Method not implemented.");
-  }
-  getSettlementsByGroup(groupId: GroupId): Promise<Suggestion[]> {
-    throw new Error("Method not implemented.");
-  }
-  deleteSettlement(suggestionId: SuggestionId): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  deleteSettlementByGroup(groupId: GroupId): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
   async createSuggestion(data: SuggestionData): Promise<Suggestion | null> {
     const doc = await SuggestionModel.create({
       groupId: data.groupId.toString(),
@@ -57,6 +44,14 @@ export class mongoSuggestionRepository implements ISuggestionRepository {
       groupId: groupId.toString(),
     });
     return docs.map(docToSuggestion);
+  }
+
+  async getSuggestionByIdAndGroup(groupId: GroupId, suggestionId: SuggestionId): Promise<Suggestion | null> {
+    const doc = await SuggestionModel.findOne(
+      groupId, 
+      suggestionId
+    );
+    return doc? docToSuggestion(doc) : null;
   }
 
   async getPendingSuggestionsByUser(

@@ -6,7 +6,6 @@ import { ExpenseId } from "../expense/ExpenseId";
 
 export interface CreateSettlementData {
   groupId: GroupId;
-  expenseId?: ExpenseId;          // optional linkage (can be dummy/null if not used yet)
   suggestionId: string;
   who: UserId;                   // debtor
   whom: UserId;                  // creditor

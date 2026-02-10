@@ -26,26 +26,6 @@ export class GroupMember {
     return new GroupMember(id, groupId, userId, role, joinedAt);
   }
 
-  get id(): string {
-    return this._id.toString();
-  }
-
-  get groupId(): GroupId {
-    return this._groupId;
-  }
-
-  get userId(): UserId {
-    return this._userId;
-  }
-
-  get role(): GroupRole {
-    return this._role;
-  }
-
-  get joinedAt(): Date {
-    return this._joinedAt;
-  }
-
   promoteToAdmin(): void {
     this._role = GroupRole.ADMIN;
   }

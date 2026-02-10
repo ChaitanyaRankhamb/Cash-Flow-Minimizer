@@ -1,10 +1,10 @@
 import { GroupId } from "../group/GroupId";
 import { UserId } from "../user/UserId";
-import { SettledId } from "./SettledId";
+import { SuggestionId } from "./SuggestionId";
 
-export class Settled {
+export class Suggestion {
   constructor(
-    public readonly _id: SettledId,
+    public readonly _id: SuggestionId,
     public readonly groupId: GroupId,
     public who: UserId,
     public whom: UserId,

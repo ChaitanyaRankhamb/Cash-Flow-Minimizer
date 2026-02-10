@@ -3,22 +3,36 @@ import { UserId } from "../user/UserId";
 import { Expense } from "./Expense";
 import { ExpenseId } from "./ExpenseId";
 
+export type SplitType = "equal" | "exact" | "percentage";
+
 export interface CreateExpenseData {
   groupId: GroupId;
   paidBy: UserId;
   title?: string,
   totalAmount: number;
-  splitType: {
-    equal?: number[];
-    exact?: number[];
-    percentage?: number[];
-  };
+  splitType: SplitType,
   splits: {
     userId: UserId;
-    value: number;
+    value?: number;
   }[];
   description?: string;
   expenseDate?: Date; // optional, defaults to now
+  notes?: string;
+}
+
+export interface UpdateExpenseData {
+  expenseId: ExpenseId;
+  groupId: GroupId,
+  paidBy?: UserId;
+  title?: string;
+  totalAmount?: number;
+  splitType:SplitType,
+  splits?: {
+    userId: UserId;
+    value?: number;
+  }[];
+  description?: string;
+  expenseDate?: Date;
   notes?: string;
 }
 
@@ -29,5 +43,9 @@ export interface ExpenseRepository {
 
   getExpensesByGroup(groupId: GroupId): Promise<Expense[]>;
 
-  deleteExpense(expenseId: ExpenseId): Promise<void>;
+  getExpenseByIdAndGroup(groupId: GroupId, expenseId: ExpenseId): Promise<Expense | null>;
+
+  updateExpense(data: UpdateExpenseData) : Promise<Expense |null>;
+
+  deleteExpense(groupId: GroupId, expenseId: ExpenseId): Promise<Expense | null>;
 }

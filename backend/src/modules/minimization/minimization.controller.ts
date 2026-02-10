@@ -24,22 +24,38 @@ export const groupMinimizationController = async (
   }
 
   try {
-    const settlements = await groupMinimizationService(
+    const suggestions = await groupMinimizationService(
       new GroupId(groupId.toString()),
       new UserId(userId)
     );
 
     res.status(200).json({
-      message: "Settlement suggestions generated successfully",
-      data: settlements,
+      message: "suggestions generated successfully",
+      data: suggestions,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     // Single fallback for all unexpected errors
-    console.error("groupMinimizationController error:", error);
+    switch (error.name) {
+      case "GroupNotFoundError":
+        res.status(404).json({ message: error.message });
+        return;
 
-    res.status(500).json({
-      message: "Internal server error",
-    });
+      case "UserNotGroupMemberError":
+        res.status(403).json({ message: error.message });
+        return;
+
+      case "BalanceFetchingError":
+        res.status(400).json({ message: error.message });
+        return;  
+
+      default:
+        // 5. Unexpected errors
+        console.error("groupBalanceController error:", error);
+        res.status(500).json({
+          message: "Internal server error",
+        });
+        return;
+    }
   }
 };

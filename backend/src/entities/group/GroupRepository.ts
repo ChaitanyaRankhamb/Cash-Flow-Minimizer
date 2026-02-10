@@ -33,6 +33,8 @@ export interface RemoveGroupMemberData {
 }
 
 export interface GroupRepository {
+  exists(groupId: GroupId) : Promise<boolean>;
+
   createGroup(data: CreateGroupData): Promise<Group>;
 
   findGroupById(groupId: GroupId): Promise<Group | null>;
@@ -51,6 +53,10 @@ export interface GroupRepository {
     groupId: GroupId,
     userId: UserId
   ): Promise<GroupMember | null>;
+
+  findAllGroupMembers(
+    groupId: GroupId
+  ): Promise<GroupMember[] | null>;
 
   updateGroupMemberRole(
     data: UpdateGroupMemberRoleData

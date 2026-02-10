@@ -1,27 +1,48 @@
-import { settledRepository } from "../../database/mongo/settled/settledRepository";
+import { groupRepository } from "../../database/mongo/group/groupRepository";
+import { suggestionRepository } from "../../database/mongo/settled/suggestionRepository";
 import { GroupId } from "../../entities/group/GroupId";
-import { Settled } from "../../entities/settled/Settled";
+import { Suggestion } from "../../entities/settled/Suggestion";
 import { UserId } from "../../entities/user/UserId";
 import { groupBalanceService } from "../balance/balance.service";
 
 export const groupMinimizationService = async (
   groupId: GroupId,
   requesterId: UserId
-): Promise<Settled[]> => {
-  // delete previous settled suggesion who still pending to settled
-  await settledRepository.deleteSettlementByGroup(groupId);
+): Promise<Suggestion[]> => {
+  // check group validation
+  const group = await groupRepository.exists(groupId);
+  if (!group) {
+    throw Object.assign(new Error("Group Not Found!")), {
+      name: "GroupNotFoundError",
+    }
+  }
 
+  const isMember = await groupRepository.findGroupMember(groupId, requesterId);
+  if (!isMember) {
+    throw Object.assign(new Error("User is Not a member of group!")), {
+      name: "UserNotGroupMemberError",
+    }
+  }
+  // delete previous settled suggesion who still pending to settled
+  await suggestionRepository.deleteSuggestionsByGroup(groupId);
+
+  // get balances of the group
   const balances = await groupBalanceService({ groupId, requesterId });
+  if (!balances) {
+    throw Object.assign(new Error("Error in balance fetching!")), {
+      name: "BalanceFetchingError",
+    } 
+  }
 
   const creditors = balances
-    .filter(b => b.netBalance > 0)
+    .filter((b) => b.netBalance > 0)
     .sort((a, b) => b.netBalance - a.netBalance);
 
   const debtors = balances
-    .filter(b => b.netBalance < 0)
+    .filter((b) => b.netBalance < 0)
     .sort((a, b) => a.netBalance - b.netBalance);
 
-  const createdSettlements: Settled[] = [];
+  const createdSuggestions: Suggestion[] = [];
 
   let i = 0;
   let j = 0;
@@ -38,20 +59,17 @@ export const groupMinimizationService = async (
       throw new Error("Net balance is missing during minimization");
     }
 
-    const debit = Math.min(
-      Math.abs(debtor.netBalance),
-      creditor.netBalance
-    );
+    const debit = Math.min(Math.abs(debtor.netBalance), creditor.netBalance);
 
-    const settlement = await settledRepository.createSettlement({
+    const suggestion = await suggestionRepository.createSuggestion({
       groupId,
       who: debtor.userId,
       whom: creditor.userId,
       amount: Number(debit.toFixed(2)),
     });
 
-    if (settlement !== null) {
-      (createdSettlements).push(settlement);
+    if (suggestion !== null) {
+      createdSuggestions.push(suggestion);
     }
 
     debtor.netBalance += debit;
@@ -61,5 +79,5 @@ export const groupMinimizationService = async (
     if (creditor.netBalance === 0) j++;
   }
 
-  return createdSettlements;
+  return createdSuggestions;
 };

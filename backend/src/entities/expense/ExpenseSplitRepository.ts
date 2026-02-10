@@ -14,13 +14,11 @@ export interface CreateExpenseSplitData {
 export interface ExpenseSplitRepository {
   createExpenseSplit(data: CreateExpenseSplitData): Promise<ExpenseSplit>;
 
-  getExpenseSplitById(expenseSplitId: ExpenseSplitId): Promise<ExpenseSplit | null>;
-
   getExpenseSplitsByExpenseId(expenseId: ExpenseId): Promise<ExpenseSplit[]>;
+
+  getExpenseSplitsByExpenseIds(expenseIds: ExpenseId[]): Promise<ExpenseSplit[]>;
 
   getExpenseSplitsByUserId(userId: UserId): Promise<ExpenseSplit[]>;
 
-  markExpenseSplitAsSettled(expenseSplitId: ExpenseSplitId): Promise<ExpenseSplit>;
-
-  deleteExpenseSplit(expenseSplitId: ExpenseSplitId): Promise<void>;
+  deleteExpenseSplits(expenseId: ExpenseId): Promise<boolean>;
 }

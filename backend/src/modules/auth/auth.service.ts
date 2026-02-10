@@ -1,11 +1,11 @@
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import { userRepository } from "../../database/mongo/userRepository";
+import { userRepository } from "../../database/mongo/user/userRepository";
 import { User } from "../../entities/user/User";
 import type { UserResponse } from "./auth.types";
 import { generateJwtToken, verifyToken } from "../../lib/jwt";
-import { UserTokenModel } from "../../database/mongo/userToken.schema";
-import { userTokenRepository } from "../../database/mongo/tokenRepository";
+import { UserTokenModel } from "../../database/mongo/token/userToken.schema";
+import { userTokenRepository } from "../../database/mongo/token/tokenRepository";
 
 import { UserId } from "../../entities/user/UserId";
 
@@ -31,7 +31,7 @@ interface loginReturn {
 export const registerService = async (
   username: string,
   email: string,
-  password: string,
+  password: string
 ): Promise<UserResponse> => {
   const existingUsername = await userRepository.findUserByUsername(username);
   if (existingUsername) {
@@ -62,7 +62,7 @@ export const loginService = async (
   password: string,
   deviceId: string,
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<loginReturn | null> => {
   if (!email || !password || !deviceId)
     throw new Error("Credentials not received.");
@@ -111,9 +111,9 @@ export const loginService = async (
   // stores token into the session
   await userTokenRepository.createTokenSession(
     user.id,
-    deviceId,
     token,
-    new Date(Date.now() + 24 * 60 * 60 * 1000), // expire at one day
+    deviceId,
+    new Date(Date.now() + 24 * 60 * 60 * 1000) // expire at one day
   );
 
   return {
