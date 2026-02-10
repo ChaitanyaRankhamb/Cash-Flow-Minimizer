@@ -1,10 +1,12 @@
 import { expenseRepository } from "../../../database/mongo/expense/expenseRepository";
 import { expenseSplitRepository } from "../../../database/mongo/expense/expenseSplitRepository";
+import { groupRepository } from "../../../database/mongo/group/groupRepository";
 import { Expense } from "../../../entities/expense/Expense";
 import { ExpenseId } from "../../../entities/expense/ExpenseId";
 import { UpdateExpenseData } from "../../../entities/expense/ExpenseRepository";
 import { CreateExpenseSplitData } from "../../../entities/expense/ExpenseSplitRepository";
 import { GroupId } from "../../../entities/group/GroupId";
+import { UserId } from "../../../entities/user/UserId";
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
@@ -19,49 +21,70 @@ export const updateExpenseService = async ({
   requesterId: string;
   payload: UpdateExpenseData;
 }): Promise<Expense> => {
-  const gid = new GroupId(groupId);
-  const eid = new ExpenseId(expenseId);
-
-  const existing = await expenseRepository.getExpenseByIdAndGroup(gid, eid);
-  if (!existing) {
-    throw Object.assign(new Error("Expense not found"), {
-      name: "ExpenseNotFoundError",
-    });
-  }
-
-  if (payload.totalAmount !== undefined && payload.totalAmount <= 0) {
+  // total amount validation
+  if (typeof payload.totalAmount !== "number" || payload.totalAmount <= 0) {
     throw Object.assign(new Error("Total amount must be positive"), {
       name: "ValidationError",
     });
   }
 
-  // Normalize splitType (string → object form), fallback to existing if needed
-  let splitType = payload.splitType;
-  if (splitType) {
-    if (typeof splitType === "string") {
-      splitType =
-        splitType === "equal"
-          ? { equal: splitType }
-          : splitType === "percentage"
-            ? { percentage: splitType }
-            : { exact: splitType };
-    }
-  } else {
-    splitType = existing.splitType;
+  //
+  if (!payload.splits?.length) {
+    throw Object.assign(new Error("At least one participant is required"), {
+      name: "ValidationError",
+    });
   }
 
-  // Enforce only one split type if updating splits & split type
-  if (payload.splits && splitType) {
-    const splitModes = [
-      splitType.equal,
-      splitType.percentage,
-      splitType.exact,
-    ].filter(Boolean);
-    if (splitModes.length !== 1) {
-      throw Object.assign(new Error("Exactly one split type must be selected"), {
+  const gid = new GroupId(groupId);
+  const payerId = new UserId(requesterId);
+  const eid = new ExpenseId(expenseId);
+
+  const expense = await expenseRepository.getExpenseById(eid);
+  if (!expense) {
+    throw Object.assign(new Error("Expense Not Found!"));
+  }
+
+  const groupMembers = await groupRepository.findAllGroupMembers(gid);
+  if (!groupMembers || groupMembers.length === 0) {
+    throw Object.assign(new Error("Group Not Found!"), {
+      name: "GroupNotFoundError",
+    });
+  }
+
+  // make split users id set
+  const splitMembersId = new Set(groupMembers.map((m) => m._userId.toString()));
+
+  // check payer is a member of group
+  if (!splitMembersId.has(payerId.toString())) {
+    throw Object.assign(new Error("You are not a member of this group"), {
+      name: "ForbiddenError",
+    });
+  }
+
+  // make invalid splits
+  const invalidSplits = payload.splits.filter(
+    (s) => !splitMembersId.has(s.userId.toString())
+  );
+
+  if (invalidSplits.length > 0) {
+    throw Object.assign(
+      new Error("One or more split members are not the members of this group"),
+      {
         name: "ValidationError",
-      });
-    }
+      }
+    );
+  }
+
+  const splitType = String(payload.splitType);
+
+  if (
+    splitType !== "equal" &&
+    splitType !== "percentage" &&
+    splitType !== "exact"
+  ) {
+    throw Object.assign(new Error("Invalid split type"), {
+      name: "ValidationError",
+    });
   }
 
   const updated = await expenseRepository.updateExpense({
@@ -79,7 +102,7 @@ export const updateExpenseService = async ({
     await recreateSplits(
       eid,
       payload.splits,
-      payload.totalAmount ?? existing.totalAmount,
+      payload.totalAmount ?? expense.totalAmount,
       splitType,
     );
   }
@@ -97,7 +120,7 @@ const recreateSplits = async (
 
   const toCreate: CreateExpenseSplitData[] = [];
 
-  if (splitType.equal) {
+  if (splitType === "equal") {
     const base = round2(totalAmount / splits.length);
     let remainder = round2(totalAmount);
 

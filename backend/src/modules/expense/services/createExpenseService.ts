@@ -1,5 +1,6 @@
 import { expenseRepository } from "../../../database/mongo/expense/expenseRepository";
 import { expenseSplitRepository } from "../../../database/mongo/expense/expenseSplitRepository";
+import { groupRepository } from "../../../database/mongo/group/groupRepository";
 import { Expense } from "../../../entities/expense/Expense";
 import { ExpenseId } from "../../../entities/expense/ExpenseId";
 import { CreateExpenseData } from "../../../entities/expense/ExpenseRepository";
@@ -18,12 +19,14 @@ export const createExpenseService = async ({
   paidBy: string;
   payload: Omit<CreateExpenseData, "groupId" | "paidBy">;
 }): Promise<Expense> => {
+  // total amount validation
   if (payload.totalAmount <= 0) {
     throw Object.assign(new Error("Total amount must be positive"), {
       name: "ValidationError",
     });
   }
 
+  //
   if (!payload.splits?.length) {
     throw Object.assign(new Error("At least one participant is required"), {
       name: "ValidationError",
@@ -33,40 +36,62 @@ export const createExpenseService = async ({
   const gid = new GroupId(groupId);
   const payerId = new UserId(paidBy);
 
-  // Fix: Use 'payload' instead of 'data'. Normalize splitType from payload. 
-  let normalizedSplitType = payload.splitType;
-  if (typeof payload.splitType === "string") {
-    normalizedSplitType =
-      payload.splitType === "equal"
-        ? { equal: payload.splitType }
-        : payload.splitType === "percentage"
-        ? { percentage: payload.splitType }
-        : { exact: payload.splitType };
+  const groupMembers = await groupRepository.findAllGroupMembers(gid);
+  if (!groupMembers || groupMembers.length === 0) {
+    throw Object.assign(new Error("Group Not Found!"), {
+      name: "GroupNotFoundError",
+    });
   }
 
-  const splitModes = [
-    normalizedSplitType?.equal,
-    normalizedSplitType?.percentage,
-    normalizedSplitType?.exact,
-  ].filter(Boolean);
+  // make split users id set
+  const splitMembersId = new Set(groupMembers.map((m) => m._userId.toString()));
 
-  if (splitModes.length !== 1) {
+  // check payer is a member of group
+  if (!splitMembersId.has(payerId.toString())) {
+    throw Object.assign(new Error("You are not a member of this group"), {
+      name: "ForbiddenError",
+    });
+  }
+
+  // make invalid splits
+  const invalidSplits = payload.splits.filter(
+    (s) => !splitMembersId.has(s.userId.toString())
+  );
+
+  if (invalidSplits.length > 0) {
     throw Object.assign(
-      new Error(
-        `Exactly one split type must be selected. Received: ${JSON.stringify(payload.splitType)}`
-      ),
-      { name: "ValidationError" }
+      new Error("One or more split members are not the members of this group"),
+      {
+        name: "ValidationError",
+      }
     );
   }
 
+  const splitType = String(payload.splitType);
+
+  if (
+    splitType !== "equal" &&
+    splitType !== "percentage" &&
+    splitType !== "exact"
+  ) {
+    throw Object.assign(new Error("Invalid split type"), {
+      name: "ValidationError",
+    });
+  }
+  
   const expense = await expenseRepository.createExpense({
     ...payload,
     groupId: gid,
     paidBy: payerId,
-    splitType: normalizedSplitType,
+    splitType,
   });
 
-  await recreateSplits(expense._id, payload.splits, payload.totalAmount, normalizedSplitType);
+  await recreateSplits(
+    expense._id,
+    payload.splits,
+    payload.totalAmount,
+    splitType
+  );
 
   return expense;
 };
@@ -75,13 +100,14 @@ const recreateSplits = async (
   expenseId: ExpenseId,
   splits: any[],
   totalAmount: number,
-  splitType: any,
+  splitType: "equal" | "exact" | "percentage"
 ) => {
+  // delete all previous expense splits of this expense
   await expenseSplitRepository.deleteExpenseSplits(expenseId);
 
   const toCreate: CreateExpenseSplitData[] = [];
 
-  if (splitType.equal) {
+  if (splitType === "equal") {
     const base = round2(totalAmount / splits.length);
     let remainder = round2(totalAmount);
 
@@ -93,7 +119,7 @@ const recreateSplits = async (
     });
   }
 
-  if (splitType.percentage) {
+  if (splitType === "percentage") {
     const sum = splits.reduce((t, s) => t + (s.value ?? 0), 0);
     if (sum !== 100) {
       throw Object.assign(new Error("Total percentage must be 100"), {
@@ -120,7 +146,7 @@ const recreateSplits = async (
     });
   }
 
-  if (splitType.exact) {
+  if (splitType === "exact") {
     const sum = round2(splits.reduce((t, s) => t + s.value, 0));
     if (sum !== round2(totalAmount)) {
       throw Object.assign(new Error("Exact split total mismatch"), {
@@ -133,7 +159,7 @@ const recreateSplits = async (
         expenseId,
         userId: s.userId,
         amount: round2(s.value),
-      }),
+      })
     );
   }
 
