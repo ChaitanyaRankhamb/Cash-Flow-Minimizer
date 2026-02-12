@@ -10,31 +10,14 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction,
 ) => {
-  const authHeader = req.headers.authorization;
+ 
 
-  if (!authHeader) {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized - No authorization header" });
-  }
-
-  console.log("Auth header:", authHeader);
-
-  if (!authHeader.startsWith("Bearer ")) {
-    return res
-      .status(401)
-      .json({
-        message:
-          "Unauthorized - Invalid authorization format. Expected 'Bearer <token>'",
-      });
-  }
-
-  const token = authHeader.split(" ")[1];
+  const token = req.cookies.token;
 
   if (!token) {
     return res
       .status(401)
-      .json({ message: "Unauthorized - No token provided after Bearer" });
+      .json({ message: "Unauthorized - No token" });
   }
 
   try {

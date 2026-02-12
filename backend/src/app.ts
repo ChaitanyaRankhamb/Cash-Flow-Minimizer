@@ -15,7 +15,12 @@ await connectDB();
 
 const app = express();
 
-app.use(cors());  // cross origin resources sharable
+// cross origin resources sharable
+app.use(cors({ 
+  origin: "http://localhost:3000",
+  credentials: true
+ }));
+
 app.use(express.json());  // express middleware
 app.use(cookieParser());  // cookie configuration in the app
 

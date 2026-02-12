@@ -60,11 +60,10 @@ export const registerService = async (
 export const loginService = async (
   email: string,
   password: string,
-  deviceId: string,
   req: Request,
   res: Response
 ): Promise<loginReturn | null> => {
-  if (!email || !password || !deviceId)
+  if (!email || !password)
     throw new Error("Credentials not received.");
 
   const user = await userRepository.findUserByEmailWithPassword(email);
@@ -87,7 +86,7 @@ export const loginService = async (
   });
 
   // delete previous token details from database
-  await userTokenRepository.deleteTokenSession(user.id, deviceId);
+  await userTokenRepository.deleteTokenSession(user.id);
 
   // Clear any existing token cookie
   res.clearCookie("token");
@@ -101,8 +100,8 @@ export const loginService = async (
   // Set new token cookie
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "strict",
+    secure: false,
+    sameSite: "lax",
     maxAge: 24 * 60 * 60 * 1000,
   });
   const decode = verifyToken(token);
@@ -112,7 +111,6 @@ export const loginService = async (
   await userTokenRepository.createTokenSession(
     user.id,
     token,
-    deviceId,
     new Date(Date.now() + 24 * 60 * 60 * 1000) // expire at one day
   );
 

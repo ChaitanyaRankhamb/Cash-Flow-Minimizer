@@ -5,7 +5,6 @@ import z from "zod";
 export interface UserTokenDocument extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
-  deviceId?: string;
   token: string;
   expireAt: Date;
   createdAt: Date;
@@ -15,7 +14,6 @@ export interface UserTokenDocument extends Document {
 // zod validation
 export const UserTokenZodSchema = z.object({
   userId: z.string(),
-  deviceId: z.string(),
   token: z.string().min(1, "Token is required"),
   expireAt: z.date(),
 });
@@ -28,11 +26,6 @@ const UserTokenSchema = new Schema<UserTokenDocument>(
       ref: "User",
       required: true,
       index: true,
-    },
-    deviceId: {
-      required: true,
-      type: String,
-      unique: true,
     },
     token: {
       type: String,

@@ -45,7 +45,7 @@ export class mongoSettlementRepository implements SettlementRepository {
   }
   
   async findSettlementsByGroup(groupId: GroupId): Promise<Settlement[]> {
-    const docs = await SettlementModel.find({ groupId: groupId.toString() });
+    const docs = await SettlementModel.find(groupId);
     return docs.map(docToSettlement);
   }
 

@@ -37,20 +37,16 @@ export const loginController = async (
   req: Request,
   res: Response,
 ): Promise<loginReturn | void> => {
-  // get device id from headers
-  const deviceId = Array.isArray(req.headers["x-device-id"])
-    ? req.headers["x-device-id"][0]
-    : req.headers["x-device-id"];
 
   const { email, password } = req.body;
 
-  if (!email || !password || !deviceId) {
+  if (!email || !password) {
     res.status(400).json({ message: "Credentials not found!" });
     return;
   }
 
   try {
-    const result = await loginService(email, password, deviceId, req, res);
+    const result = await loginService(email, password, req, res);
 
     if (!result) {
       res.status(401).json({ message: "Invalid credentials" });
