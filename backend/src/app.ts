@@ -16,6 +16,8 @@ await connectDB();
 
 const app = express();
 
+app.use(cookieParser());  // cookie configuration in the app
+
 // cross origin resources sharable
 app.use(cors({ 
   origin: "http://localhost:3000",
@@ -23,7 +25,6 @@ app.use(cors({
  }));
 
 app.use(express.json());  // express middleware
-app.use(cookieParser());  // cookie configuration in the app
 
 app.get("/health", async (req: Request, res: Response) => {
   res.status(200).json({ status: "OK" });

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { registerService, loginService, userToResponse } from "./auth.service";
 import { User } from "../../entities/user/User";
+import { AuthRequest } from "../../middleware/authMiddleware";
 
 interface loginReturn {
   user: User;
@@ -34,7 +35,7 @@ export const registerController = async (
 };
 
 export const loginController = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
 ): Promise<loginReturn | void> => {
 
@@ -57,7 +58,7 @@ export const loginController = async (
       message: result.message,
       user: userToResponse(result.user),
       token: result.token,
-      cookie: req.cookies.token,
+      cookie: req.cookies.token
     });
   } catch (error: any) {
     res
