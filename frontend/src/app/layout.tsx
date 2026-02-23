@@ -1,5 +1,10 @@
 import { ThemeProvider } from "@/lib/theme";
-import "@/app/globals.css"
+import "@/app/globals.css";
+import { UserProvider } from "@/context/UserContext";
+import { GroupProvider } from "@/context/GroupContext";
+import { ExpenseProvider } from "@/context/expenseContext";
+import { SuggestionProvider } from "@/context/SuggestionContext";
+import { NetBalanceProvider } from "@/context/netBalance.Context";
 
 export default function RootLayout({
   children,
@@ -13,7 +18,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <UserProvider>
+            <GroupProvider>
+              <ExpenseProvider>
+                <SuggestionProvider>
+                  <NetBalanceProvider>
+                  {children}
+                  </NetBalanceProvider>
+                </SuggestionProvider>
+              </ExpenseProvider>
+            </GroupProvider>
+          </UserProvider>
         </ThemeProvider>
       </body>
     </html>

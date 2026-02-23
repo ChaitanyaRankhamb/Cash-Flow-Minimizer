@@ -22,7 +22,7 @@ export const createGroupService = async (
   await groupRepository.addGroupMember({
     groupId: group.id,
     userId: createdBy,
-    role: GroupRole.ADMIN as const, // Alternatively, use GroupRole.ADMIN if available/imported
+    role: GroupRole.ADMIN,
   });
 
   return group;

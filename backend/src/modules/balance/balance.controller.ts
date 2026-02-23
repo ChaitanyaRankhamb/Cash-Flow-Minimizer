@@ -32,6 +32,7 @@ export const groupBalanceController = async (
     });
 
     res.status(200).json({
+      success: true,
       message: "Group balances fetched successfully",
       data: balances,
     });

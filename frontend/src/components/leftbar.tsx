@@ -1,28 +1,39 @@
-import { LayoutDashboard, Users, CreditCard, Zap, Settings, User } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+"use client"
 
-interface SidebarProps {
-  userName: string
-}
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  Zap,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useUser } from "@/context/UserContext";
 
-export function Sidebar({ userName }: SidebarProps) {
+
+export function Sidebar() {
+
+  const { user } = useUser();
+
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', active: true },
-    { icon: Users, label: 'Groups', active: false },
-    { icon: CreditCard, label: 'Expenses', active: false },
-    { icon: Zap, label: 'Loans', active: false },
-    { icon: Users, label: 'Settlements', active: false },
-  ]
+    { icon: LayoutDashboard, label: "Dashboard", active: true },
+    { icon: Users, label: "Groups", active: false },
+    { icon: CreditCard, label: "Expenses", active: false },
+    { icon: Zap, label: "Loans", active: false },
+    { icon: Users, label: "Settlements", active: false },
+  ];
 
   return (
-    <aside className="w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Zap className="w-5 h-5 text-primary-foreground" />
+    <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col h-screen fixed left-0 top-0">
+
+      {/* Logo Section */}
+      <div className="px-6 py-6 border-b border-sidebar-border">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-sm">
+            <Zap className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
-          <h1 className="font-bold text-lg text-sidebar-foreground">Cash-Flow</h1>
+          <h1 className="text-lg font-semibold tracking-tight">
+            Cash-Flow
+          </h1>
         </div>
       </div>
 
@@ -31,30 +42,39 @@ export function Sidebar({ userName }: SidebarProps) {
         {navItems.map((item) => (
           <button
             key={item.label}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
               item.active
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:bg-opacity-50'
-            }`}
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/60"
+            )}
           >
-            <item.icon className="w-5 h-5" />
-            <span className="font-medium">{item.label}</span>
+            <item.icon className="w-5 h-5 opacity-80" />
+            <span>{item.label}</span>
           </button>
         ))}
       </nav>
 
       {/* User Profile */}
       <div className="p-4 border-t border-sidebar-border">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors group">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sidebar-primary-foreground font-bold">
-            {userName.charAt(0)}
+        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-sidebar-accent/60 group">
+
+          {/* Avatar */}
+          <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-semibold text-sm shadow-sm">
+            {user?.username.charAt(0).toUpperCase()}
           </div>
+
+          {/* User Info */}
           <div className="flex-1 text-left">
-            <p className="text-sm font-medium text-sidebar-foreground">{userName}</p>
-            <p className="text-xs text-sidebar-foreground opacity-60">Profile</p>
+            <p className="text-sm font-medium text-sidebar-foreground">
+              {user?.username}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              View Profile
+            </p>
           </div>
         </button>
       </div>
     </aside>
-  )
+  );
 }

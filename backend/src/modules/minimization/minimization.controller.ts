@@ -30,6 +30,7 @@ export const groupMinimizationController = async (
     );
 
     res.status(200).json({
+      success: true,
       message: "suggestions generated successfully",
       data: suggestions,
     });

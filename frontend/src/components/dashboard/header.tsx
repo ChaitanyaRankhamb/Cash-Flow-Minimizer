@@ -1,12 +1,8 @@
-"use client"
+"use client";
 
+import { useEffect, useState } from "react";
 import { Moon, Sun, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface HeaderProps {
-  userName: string;
-}
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,33 +10,47 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
+import UserFetch, { UserDTO } from "@/lib/api/userFetch";
+import { useUser } from "@/context/UserContext";
 
-export function Header({ userName }: HeaderProps) {
+export function Header() {
   const { setTheme } = useTheme();
+  const { user } = useUser();
+
   return (
-    <header className="bg-card border-b border-border">
+    <header className="bg-card border-b border-border backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="px-8 py-6 flex items-center justify-between">
+
+        {/* Left Section */}
         <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            Welcome back, {userName}
+          <h2 className="text-2xl font-semibold tracking-tight text-primary">
+            Welcome back, {user?.username ?? "User"}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Optimize. Settle. Simplify.
           </p>
         </div>
 
+        {/* Right Section */}
         <div className="flex items-center gap-4">
+
           {/* Theme Toggle */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="border-border bg-background hover:bg-muted transition"
+              >
+                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-foreground" />
+                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-foreground" />
               </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent
+              align="end"
+              className="bg-popover border border-border text-popover-foreground"
+            >
               <DropdownMenuItem onClick={() => setTheme("light")}>
                 Light
               </DropdownMenuItem>
@@ -55,12 +65,12 @@ export function Header({ userName }: HeaderProps) {
 
           {/* Notifications */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="text-foreground hover:bg-muted relative"
+            className="relative hover:bg-muted transition"
           >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
+            <Bell className="w-5 h-5 text-foreground" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
           </Button>
         </div>
       </div>

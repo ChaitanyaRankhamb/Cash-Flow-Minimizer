@@ -25,8 +25,9 @@ export const createGroupController = async (
     const group = await createGroupService(name, description, userId);
 
     res.status(201).json({
+      success: true,
       message: "Group created successfully",
-      group,
+      data: group,
     });
   } catch (error: any) {
     console.error("Create Group Error:", error);
@@ -34,11 +35,12 @@ export const createGroupController = async (
     const message = error.message?.toLowerCase() || "";
 
     if (message.includes("already")) {
-      res.status(409).json({ message: error.message });
+      res.status(409).json({ success: false, message: error.message });
       return;
     }
 
     res.status(500).json({
+      success: false,
       message: "Internal Server Error",
       error: error.message,
     });
