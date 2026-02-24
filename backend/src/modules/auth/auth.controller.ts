@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { registerService, loginService, userToResponse } from "./auth.service";
 import { User } from "../../entities/user/User";
-import { AuthRequest } from "../../middleware/authMiddleware";
 import { userRegistrationValidation } from "../../validation/userRegistrationValidation";
 import { userLoginValidation } from "../../validation/userLoginValidation";
+import { AuthRequest } from "../../middleware/authMiddleware";
 
 interface loginReturn {
   user: User;
