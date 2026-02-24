@@ -10,14 +10,10 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction,
 ) => {
- 
-
-  const token = req.cookies.token;
+  const token = req.cookies?.token;
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized - No token" });
+    return res.status(401).json({ message: "Unauthorized - No token" });
   }
 
   try {
@@ -30,7 +26,6 @@ export const authMiddleware = (
     req.userId = payload.userId;
     next();
   } catch (error) {
-    console.error("Token verification failed:", error);
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };

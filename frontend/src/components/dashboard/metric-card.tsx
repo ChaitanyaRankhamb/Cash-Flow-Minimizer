@@ -1,36 +1,72 @@
-import { Card } from '@/components/ui/card'
-import { LucideIcon } from 'lucide-react'
+import { Card } from "@/components/ui/card";
+import { LucideIcon } from "lucide-react";
 
 interface MetricCardProps {
-  icon: LucideIcon
-  label: string
-  value: string | number
-  subtitle?: string
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  subtitle?: string;
 }
 
-export function MetricCard({ icon: Icon, label, value, subtitle }: MetricCardProps) {
+export function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  subtitle,
+}: MetricCardProps) {
   return (
-    <Card className="relative overflow-hidden border border-border/40 bg-card/50 backdrop-blur-sm hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 p-6">
-      <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent"></div>
-      </div>
+    <Card
+      className="
+        group relative 
+        bg-card 
+        border border-border 
+        rounded-2xl 
+        p-6 
+        transition-all duration-300
+        hover:shadow-md
+        hover:border-primary/40
+      "
+    >
+      <div className="flex items-start justify-between">
+        {/* Left Content */}
+        <div>
+          <p className="text-sm font-medium text-muted-foreground mb-2">
+            {label}
+          </p>
 
-      <div className="relative">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-2">{label}</p>
-            <p className="text-3xl font-bold text-foreground">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-            )}
-          </div>
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Icon className="h-6 w-6 text-primary" />
-          </div>
+          <p className="text-3xl font-semibold tracking-tight text-foreground">
+            {value}
+          </p>
+
+          {subtitle && (
+            <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+          )}
         </div>
 
-        <div className="absolute bottom-0 left-0 w-1 h-1 bg-primary rounded-full opacity-0 hover:opacity-100 transition-opacity"></div>
+        {/* Icon Container */}
+        <div
+          className="
+            p-3 
+            rounded-xl 
+            bg-primary/10 
+            border border-primary/20 
+            transition-all duration-300
+            group-hover:bg-primary/15
+          "
+        >
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
       </div>
+
+      {/* Subtle bottom accent line */}
+      <div
+        className="
+          absolute bottom-0 left-0 h-[2px] w-0 
+          bg-primary 
+          transition-all duration-300
+          group-hover:w-full
+        "
+      />
     </Card>
-  )
+  );
 }

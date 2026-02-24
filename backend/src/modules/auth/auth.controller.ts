@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { registerService, loginService, userToResponse } from "./auth.service";
 import { User } from "../../entities/user/User";
+import { AuthRequest } from "../../middleware/authMiddleware";
+import { userRegistrationValidation } from "../../validation/userRegistrationValidation";
+import { userLoginValidation } from "../../validation/userLoginValidation";
 
 interface loginReturn {
   user: User;
@@ -21,6 +24,16 @@ export const registerController = async (
       return;
     }
 
+    // check user registration data validation
+    const isValidated = await userRegistrationValidation(username, email, password);
+
+    // if there is any inconsistency in user registration data, return an error
+    if (isValidated instanceof Error) {
+      res.status(400).json({ message: isValidated.message });
+      return;
+    }
+
+    /// call the registration service
     const user = await registerService(username, email, password);
 
     res
@@ -34,7 +47,7 @@ export const registerController = async (
 };
 
 export const loginController = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
 ): Promise<loginReturn | void> => {
 
@@ -46,6 +59,15 @@ export const loginController = async (
   }
 
   try {
+    // check user login data validation
+    const isValidated = await userLoginValidation( email, password);
+
+    // if there is any inconsistency in user login data, return an error
+    if (isValidated instanceof Error) {
+      res.status(400).json({ message: isValidated.message });
+      return;
+    }
+
     const result = await loginService(email, password, req, res);
 
     if (!result) {
@@ -57,7 +79,7 @@ export const loginController = async (
       message: result.message,
       user: userToResponse(result.user),
       token: result.token,
-      cookie: req.cookies.token,
+      cookie: req.cookies.token
     });
   } catch (error: any) {
     res

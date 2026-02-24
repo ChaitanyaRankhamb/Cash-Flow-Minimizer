@@ -1,12 +1,12 @@
 import express from "express";
 import { loginController, registerController } from "./auth.controller";
-import { authMiddleware } from "../../middleware/authMiddleware";
+import { authRateLimiter } from "../../middleware/authRateLimiter";
 
 const router = express.Router();
 
 // Public routes (no token required)
-router.post("/register", registerController);
-router.post("/login", loginController);
+router.post("/register", authRateLimiter, registerController);
+router.post("/login", authRateLimiter, loginController);
 
 // Protected routes (require Bearer token) – add your guarded routes here, e.g.:
 // router.get("/me", authMiddleware, meController);

@@ -2,10 +2,9 @@ import { AuthRequest } from "../../../middleware/authMiddleware";
 import { Response } from "express";
 import { getExpensesByGroupService } from "../services/getExpensesByGroupService";
 
-
 export const getExpensesByGroupController = async (
   req: AuthRequest & { params: { groupId: string } },
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     if (!req.userId) {
@@ -18,24 +17,35 @@ export const getExpensesByGroupController = async (
       requesterId: req.userId,
     });
 
+    const result = expenses.map((e) => ({
+      id: e._id.toString(),
+      groupId: e.groupId.toString(),
+      title: e.title,
+      amount: e.totalAmount,
+      notes: e.notes ?? "",
+      expenseDate: e.expenseDate,
+    }));
+
     res.status(200).json({
+      success: true,
       message: "Expenses retrieved successfully",
-      expenses, // empty array is valid
+      data: result,
     });
   } catch (error: any) {
     console.error("Get Expenses Error:", error);
 
     switch (error.name) {
       case "GroupNotFoundError":
-        res.status(404).json({ message: error.message });
+        res.status(404).json({ success: false, message: error.message });
         break;
 
       case "ForbiddenError":
-        res.status(403).json({ message: error.message });
+        res.status(403).json({ success: false, message: error.message });
         break;
 
       default:
         res.status(500).json({
+          success: false,
           message: "Internal Server Error",
         });
     }

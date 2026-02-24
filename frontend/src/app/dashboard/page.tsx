@@ -1,3 +1,5 @@
+"use client";
+
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { CircularProgressCard } from "@/components/dashboard/circular-progress";
 import { OptimizationImpactCard } from "@/components/dashboard/optimization-impact";
@@ -6,21 +8,40 @@ import { Users, DollarSign, Clock, CheckCircle2 } from "lucide-react";
 import { ExpenseDistributionCard } from "@/components/dashboard/exprense-distribution";
 import { Sidebar } from "@/components/leftbar";
 import { Header } from "@/components/dashboard/header";
+import { useGroups } from "@/context/GroupContext";
+import { useSuggestions } from "@/context/SuggestionContext";
 
 export default function Dashboard() {
+  const { groups, loading, error } = useGroups();
+  const groupCount: number = groups.length;
+
+  const {
+    suggestions,
+    loading: suggestionsLoading,
+    error: suggestionsError,
+  } = useSuggestions();
+  const suggestionCount: number = suggestions.length;
+
+  let settledSuggestion: number = 0;
+
+  for (const suggestion of suggestions) {
+    if (suggestion.isSettled) {
+      settledSuggestion++;
+    }
+  }
+
+
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      
       {/* Sidebar already uses sidebar tokens */}
-      <Sidebar userName="Chaitu" />
+      <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        
+      <div className="ml-64 flex-1 flex-col overflow-hidden">
         {/* Header should use bg-card + border-border internally */}
-        <Header userName="Chaitu" />
+        <Header />
 
         <main className="flex-1 px-8 py-10 max-w-7xl w-full mx-auto">
-          
           {/* =========================
               Section 1: Global Financial Overview
           ========================== */}
@@ -33,25 +54,56 @@ export default function Dashboard() {
               <MetricCard
                 icon={Users}
                 label="Total Groups Joined"
-                value="4"
-                subtitle="Active groups"
+                value={loading ? "..." : error ? "0" : groupCount.toString()}
+                subtitle={
+                  loading
+                    ? "Loading Groups"
+                    : error
+                    ? "Error in Groups Loading"
+                    : "Active Groups"
+                }
               />
               <MetricCard
                 icon={DollarSign}
                 label="Total Expenses Recorded"
-                value="26"
-                subtitle="Transactions"
+                value={
+                  suggestionsLoading
+                    ? "..."
+                    : suggestionsError
+                    ? "0"
+                    : suggestionCount.toString()
+                }
+                subtitle={
+                  suggestionsLoading 
+                    ? "Expense Records Loading"
+                    : suggestionsError
+                    ? "Error in Expenses Loading"
+                    : "Total Expenses"
+                }
               />
+
               <MetricCard
                 icon={Clock}
                 label="Total Pending Settlements"
-                value="7"
+                value={
+                  suggestionsLoading
+                    ? "..."
+                    : suggestionsError
+                    ? "0"
+                    : (suggestionCount - settledSuggestion).toString()
+                }
                 subtitle="Pending"
               />
               <MetricCard
                 icon={CheckCircle2}
                 label="Total Settled Transactions"
-                value="19"
+                value={
+                  suggestionsLoading
+                    ? "..."
+                    : suggestionsError
+                    ? "0"
+                    : settledSuggestion.toString()
+                }
                 subtitle="Completed"
               />
             </div>
@@ -81,7 +133,6 @@ export default function Dashboard() {
             </h2>
             <HealthIndicatorCard />
           </section>
-
         </main>
       </div>
     </div>
